@@ -188,6 +188,8 @@ struct Actions::Impl {
     unsigned long long projectTime = 0, userTime = 0;
     f64 time = 0.0, nextCheck = 0.0;
     Device device = Device::KeyboardMouse;
+    f32 mouseScale = 1.0f, padScale = 1.0f;
+    bool invertMouseY = false, invertPadY = false;
     mutable std::vector<std::string> warned;
 
     const Bound* find(std::string_view name) const {
@@ -294,7 +296,10 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
                 case MouseSource::WheelUp: down = down || input.wheelDelta() > 0.0f; break;
                 case MouseSource::WheelDown: down = down || input.wheelDelta() < 0.0f; break;
                 case MouseSource::Wheel: mouseV += input.wheelDelta(); break;
-                case MouseSource::Move: mouse2 += Vec2{input.mouseDeltaX(), -input.mouseDeltaY()}; break;
+                case MouseSource::Move:
+                    mouse2 += Vec2{input.mouseDeltaX() * m->mouseScale,
+                                   -input.mouseDeltaY() * m->mouseScale * (m->invertMouseY ? -1.0f : 1.0f)};
+                    break;
                 case MouseSource::MoveX: mouseV += input.mouseDeltaX(); break;
                 case MouseSource::MoveY: mouseV -= input.mouseDeltaY(); break;
                 }
@@ -326,7 +331,10 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
                 }
                 }
                 if (kind == ActionKind::Button) down = down || buttonDown || (p->analog != PadAnalog::None && a >= kTriggerPressed);
-                else if (is2D(kind)) v2 += a2 * b.padSign[pi];
+                else if (is2D(kind)) {
+                    if (kind == ActionKind::Delta2) a2 = Vec2{a2.x * m->padScale, a2.y * m->padScale * (m->invertPadY ? -1.0f : 1.0f)};
+                    v2 += a2 * b.padSign[pi];
+                }
                 else v += a * b.padSign[pi];
                 usedPad = usedPad || buttonDown || a != 0.0f || a2.x != 0.0f || a2.y != 0.0f;
             }
@@ -358,6 +366,13 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
     }
     if (usedPad) m->device = Device::Gamepad;
     else if (usedKeyboard) m->device = Device::KeyboardMouse;
+}
+
+void Actions::setLookSettings(f32 mouseScale, f32 padScale, bool invertMouseY, bool invertPadY) {
+    m->mouseScale = mouseScale;
+    m->padScale = padScale;
+    m->invertMouseY = invertMouseY;
+    m->invertPadY = invertPadY;
 }
 
 void Actions::clear() {

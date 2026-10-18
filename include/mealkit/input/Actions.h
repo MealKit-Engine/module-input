@@ -82,6 +82,8 @@ public:
     void update(const Input& input, const PadState& pad, bool keyboardAllowed, bool mouseAllowed, f64 dt);
     // 모든 값을 놓은 상태로 (창이 포커스를 잃었을 때, 매치를 다시 시작할 때)
     void clear();
+    // 플레이어 설정의 감도·Y축 반전: Delta2 액션(카메라 돌리기)의 마우스와 게임패드 몫에 곱한다 (입력을 양자화하기 전, 화면 쪽에서만)
+    void setLookSettings(f32 mouseScale, f32 padScale, bool invertMouseY, bool invertPadY);
 
     // 이름으로 읽는다. 없는 액션은 0이고 이름마다 한 번 경고한다.
     bool down(std::string_view action) const;
