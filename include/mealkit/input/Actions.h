@@ -38,12 +38,12 @@ MEALKIT_STRUCT(Action) {
     MEALKIT_FIELD(std::string, label, {}, "Name shown to players");
     MEALKIT_FIELD(std::string, keys, {}, "Keys (Axis: negative positive, Axis2: up down left right)");
     MEALKIT_FIELD(std::string, mouse, {}, "Mouse (Left, Right, Middle, WheelUp, WheelDown, Wheel, Move, MoveX, MoveY)");
-    MEALKIT_FIELD(std::string, pad, {}, "Gamepad (A, B, X, Y, LeftStick, RightStick, DPad, LeftTrigger ...)");
+    MEALKIT_FIELD(std::string, pad, {}, "Gamepad (A, B, X, Y, LeftStick, RightStick, DPad, LeftTrigger ..., -name is negative)");
     MEALKIT_FIELD(f32, rate, 1.0f, "Delta: amount per second from keys and sticks");
     MEALKIT_FIELD(f32, deadzone, 0.2f, "Stick and trigger dead zone (0 to 1)");
 };
 
-// 게임패드 한 개의 상태 (플랫폼 계층이 채운다, 게임패드 항목). 스틱 y는 위가 +.
+// 게임패드 한 개의 상태 (플랫폼 계층 mealkit/platform/Gamepad.h가 채운다). 스틱 y는 위가 +.
 namespace pad {
 inline constexpr u16 A = 1u << 0, B = 1u << 1, X = 1u << 2, Y = 1u << 3;
 inline constexpr u16 LeftShoulder = 1u << 4, RightShoulder = 1u << 5, Back = 1u << 6, Start = 1u << 7;

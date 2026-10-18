@@ -98,6 +98,7 @@ struct Bound {
     std::vector<u8> keys; // 0 = 빈 자리("-")
     std::vector<MouseSource> mouse;
     std::vector<const PadName*> pad;
+    std::vector<f32> padSign; // "-DPadDown" = -1
     bool down = false, prevDown = false;
     f32 value = 0.0f;
     Vec2 value2{};
@@ -107,6 +108,7 @@ void parse(Bound& b, std::string* warnings) {
     b.keys.clear();
     b.mouse.clear();
     b.pad.clear();
+    b.padSign.clear();
     auto warn = [&](const char* what, const std::string& name) {
         if (warnings) *warnings += "action " + b.id + ": unknown " + what + " '" + name + "'\n";
     };
@@ -128,11 +130,17 @@ void parse(Bound& b, std::string* warnings) {
         if (!found) warn("mouse input", w);
     }
     for (const std::string& w : words(b.def.pad)) {
+        const bool negative = w.size() > 1 && w[0] == '-';
+        const std::string name = negative ? w.substr(1) : w;
         const PadName* p = nullptr;
         for (const PadName& n : kPadNames)
-            if (w == n.name) p = &n;
-        if (p) b.pad.push_back(p);
-        else warn("gamepad input", w);
+            if (name == n.name) p = &n;
+        if (!p) {
+            warn("gamepad input", w);
+            continue;
+        }
+        b.pad.push_back(p);
+        b.padSign.push_back(negative ? -1.0f : 1.0f);
     }
 }
 
@@ -295,7 +303,8 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
 
         // 게임패드
         if (padState.connected)
-            for (const PadName* p : b.pad) {
+            for (size_t pi = 0; pi < b.pad.size(); ++pi) {
+                const PadName* p = b.pad[pi];
                 f32 a = 0.0f;
                 Vec2 a2{};
                 const bool buttonDown = p->button && (padState.buttons & p->button);
@@ -317,8 +326,8 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
                 }
                 }
                 if (kind == ActionKind::Button) down = down || buttonDown || (p->analog != PadAnalog::None && a >= kTriggerPressed);
-                else if (is2D(kind)) v2 += a2;
-                else v += a;
+                else if (is2D(kind)) v2 += a2 * b.padSign[pi];
+                else v += a * b.padSign[pi];
                 usedPad = usedPad || buttonDown || a != 0.0f || a2.x != 0.0f || a2.y != 0.0f;
             }
 
