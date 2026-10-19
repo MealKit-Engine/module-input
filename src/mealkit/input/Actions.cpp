@@ -1,7 +1,7 @@
 #include "mealkit/input/Actions.h"
 
 #include "mealkit/core/Log.h"
-#include "mealkit/game/Tables.h"
+#include "mealkit/data/Tables.h"
 #include "mealkit/platform/Input.h"
 #include "mealkit/platform/Paths.h"
 
@@ -208,7 +208,7 @@ struct Actions::Impl {
         projectTime = projectPath.empty() ? 0 : fileWriteTime(projectPath);
         userTime = userFile.empty() ? 0 : fileWriteTime(userFile);
         sim::Table<Action> table;
-        if (!projectPath.empty()) game::loadTable(table, kBindingsTable);
+        if (!projectPath.empty()) data::loadTable(table, kBindingsTable);
         else MEALKIT_WARN("Input: assets/%s not found - the game has no actions", kBindingsTable);
         project = table.rows;
         std::vector<Bound> next(table.size());
@@ -218,8 +218,8 @@ struct Actions::Impl {
         }
         // 사용자 파일: 같은 id 행의 바인딩 필드만 덮는다 (없어진 액션은 무시)
         if (userTime != 0) {
-            game::TableText text;
-            if (game::readTableText(userFile, text)) {
+            data::TableText text;
+            if (data::readTableText(userFile, text)) {
                 for (size_t r = 0; r < text.ids.size(); ++r)
                     for (Bound& b : next)
                         if (b.id == text.ids[r]) {
@@ -432,7 +432,7 @@ void Actions::resetBinding(std::string_view action) {
 
 bool Actions::saveUser() const {
     if (m->userFile.empty()) return false;
-    game::TableText text;
+    data::TableText text;
     for (size_t i = 0; i < m->actions.size(); ++i) {
         const Bound& b = m->actions[i];
         if (i < m->project.size() && sameBinding(b.def, m->project[i])) continue;
@@ -449,7 +449,7 @@ bool Actions::saveUser() const {
         return true;
     }
     createDirectories(parentDirectory(m->userFile));
-    if (!game::writeTableText(m->userFile, text, "Action")) return false;
+    if (!data::writeTableText(m->userFile, text, "Action")) return false;
     m->userTime = fileWriteTime(m->userFile);
     return true;
 }

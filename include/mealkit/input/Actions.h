@@ -3,6 +3,7 @@
 #include "mealkit/core/Math.h"
 #include "mealkit/core/Reflect.h"
 #include "mealkit/core/Types.h"
+#include "mealkit/platform/Gamepad.h"
 
 #include <string>
 #include <string_view>
@@ -41,21 +42,6 @@ MEALKIT_STRUCT(Action) {
     MEALKIT_FIELD(std::string, pad, {}, "Gamepad (A, B, X, Y, LeftStick, RightStick, DPad, LeftTrigger ..., -name is negative)");
     MEALKIT_FIELD(f32, rate, 1.0f, "Delta: amount per second from keys and sticks");
     MEALKIT_FIELD(f32, deadzone, 0.2f, "Stick and trigger dead zone (0 to 1)");
-};
-
-// 게임패드 한 개의 상태 (플랫폼 계층 mealkit/platform/Gamepad.h가 채운다). 스틱 y는 위가 +.
-namespace pad {
-inline constexpr u16 A = 1u << 0, B = 1u << 1, X = 1u << 2, Y = 1u << 3;
-inline constexpr u16 LeftShoulder = 1u << 4, RightShoulder = 1u << 5, Back = 1u << 6, Start = 1u << 7;
-inline constexpr u16 LeftThumb = 1u << 8, RightThumb = 1u << 9;
-inline constexpr u16 DPadUp = 1u << 10, DPadDown = 1u << 11, DPadLeft = 1u << 12, DPadRight = 1u << 13;
-} // namespace pad
-
-struct PadState {
-    bool connected = false;
-    u16 buttons = 0; // pad::A ...
-    f32 leftX = 0.0f, leftY = 0.0f, rightX = 0.0f, rightY = 0.0f; // -1..1 (데드존 전)
-    f32 leftTrigger = 0.0f, rightTrigger = 0.0f;                 // 0..1
 };
 
 // 이름 ↔ 코드 (바인딩 파일과 설정 화면이 쓰는 이름). 모르는 이름은 0.
