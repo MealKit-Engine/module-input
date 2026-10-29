@@ -13,13 +13,13 @@ namespace mealkit::input {
 namespace {
 
 constexpr f64 kFileCheckSeconds = 0.25;
-constexpr f32 kTriggerPressed = 0.5f; // 트리거를 버튼으로 쓸 때 눌림으로 보는 값
+constexpr f32 kTriggerPressed = 0.5f; // value at which a trigger counts as pressed when used as a button
 
 struct KeyName {
     const char* name;
     u8 vk;
 };
-// 글자(A-Z)와 숫자(0-9)는 그 문자 그대로 (Win32 가상 키 코드와 같다)
+// Letters (A-Z) and digits (0-9) are the character itself (same as Win32 virtual key codes)
 constexpr KeyName kKeyNames[] = {
     {"Backspace", key::Backspace}, {"Tab", key::Tab},     {"Enter", key::Enter}, {"Shift", key::Shift},
     {"Control", key::Control},     {"Alt", key::Alt},     {"Escape", key::Escape}, {"Space", key::Space},
@@ -79,7 +79,7 @@ std::vector<std::string> words(const std::string& s) {
 bool is2D(ActionKind k) { return k == ActionKind::Axis2 || k == ActionKind::Delta2; }
 bool isDelta(ActionKind k) { return k == ActionKind::Delta || k == ActionKind::Delta2; }
 
-// 데드존 밖만 0..1로 다시 편다
+// Rescales only the part outside the deadzone to 0..1
 f32 dead1(f32 v, f32 dz) {
     const f32 a = std::fabs(v);
     if (a <= dz || dz >= 1.0f) return 0.0f;
@@ -91,11 +91,11 @@ Vec2 dead2(Vec2 v, f32 dz) {
     return v * (std::min((len - dz) / (1.0f - dz), 1.0f) / len);
 }
 
-// 한 행을 읽어 둔 것: 이름을 매 프레임 찾지 않는다
+// One row pre-read: names aren't looked up every frame
 struct Bound {
     std::string id;
     Action def;
-    std::vector<u8> keys; // 0 = 빈 자리("-")
+    std::vector<u8> keys; // 0 = empty slot ("-")
     std::vector<MouseSource> mouse;
     std::vector<const PadName*> pad;
     std::vector<f32> padSign; // "-DPadDown" = -1
@@ -148,7 +148,7 @@ bool sameBinding(const Action& a, const Action& b) {
     return a.keys == b.keys && a.mouse == b.mouse && a.pad == b.pad && a.rate == b.rate && a.deadzone == b.deadzone;
 }
 
-// 사용자 파일에 남기는 필드 (종류·이름은 프로젝트 것을 쓴다)
+// Fields kept in the user file (kind/name come from the project)
 bool userField(const std::string& path) {
     return path == "keys" || path == "mouse" || path == "pad" || path == "rate" || path == "deadzone";
 }
@@ -182,7 +182,7 @@ const char* keyName(u8 vk) {
 
 struct Actions::Impl {
     std::vector<Bound> actions;
-    std::vector<Action> project; // 프로젝트 파일 값 (되돌리기와 사용자 파일의 차이 비교)
+    std::vector<Action> project; // project file values (for reverting and diffing against the user file)
     std::string userFile;
     std::string projectPath;
     unsigned long long projectTime = 0, userTime = 0;
@@ -216,7 +216,7 @@ struct Actions::Impl {
             next[i].id = table.ids[i];
             next[i].def = table.rows[i];
         }
-        // 사용자 파일: 같은 id 행의 바인딩 필드만 덮는다 (없어진 액션은 무시)
+        // User file: only overrides binding fields of rows with the same id (vanished actions are ignored)
         if (userTime != 0) {
             data::TableText text;
             if (data::readTableText(userFile, text)) {
@@ -233,7 +233,7 @@ struct Actions::Impl {
         std::string warnings;
         for (Bound& b : next) {
             parse(b, &warnings);
-            for (const Bound& old : actions) // 다시 읽어도 누르고 있던 상태는 이어 간다
+            for (const Bound& old : actions) // held state carries over even after a reload
                 if (old.id == b.id) b.down = b.prevDown = old.down;
         }
         if (!warnings.empty()) MEALKIT_WARN("Input: assets/%s:\n%s", kBindingsTable, warnings.c_str());
@@ -269,13 +269,13 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
     for (Bound& b : m->actions) {
         const ActionKind kind = b.def.kind;
         const f32 dz = std::clamp(b.def.deadzone, 0.0f, 0.99f);
-        const f32 rate = isDelta(kind) ? b.def.rate * seconds : 1.0f; // 키·스틱 → 이번 프레임 변화량
+        const f32 rate = isDelta(kind) ? b.def.rate * seconds : 1.0f; // keys/sticks → change amount this frame
         bool down = false;
         f32 v = 0.0f, mouseV = 0.0f;
         Vec2 v2{}, mouse2{};
         auto key = [&](size_t i) { return keyboardAllowed && b.keys[i] && input.keyDown(b.keys[i]); };
 
-        // 키보드
+        // Keyboard
         if (kind == ActionKind::Button) {
             for (size_t i = 0; i < b.keys.size(); ++i) down = down || key(i);
         } else if (is2D(kind)) {
@@ -286,7 +286,7 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
         }
         usedKeyboard = usedKeyboard || down || v != 0.0f || v2.x != 0.0f || v2.y != 0.0f;
 
-        // 마우스 (픽셀·휠 칸 그대로, rate를 곱하지 않는다). 위가 +
+        // Mouse (pixels/wheel notches as is, rate isn't multiplied). Up is +
         if (mouseAllowed)
             for (MouseSource s : b.mouse) {
                 switch (s) {
@@ -306,7 +306,7 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
                 usedKeyboard = usedKeyboard || down || mouseV != 0.0f || mouse2.x != 0.0f || mouse2.y != 0.0f;
             }
 
-        // 게임패드
+        // Gamepad
         if (padState.connected)
             for (size_t pi = 0; pi < b.pad.size(); ++pi) {
                 const PadName* p = b.pad[pi];
@@ -349,7 +349,7 @@ void Actions::update(const Input& input, const PadState& padState, bool keyboard
             if (kind == ActionKind::Axis2) {
                 v2 += mouse2;
                 const f32 len = length(v2);
-                if (len > 1.0f) v2 = v2 * (1.0f / len); // 대각선 키·스틱 + 키는 길이 1로
+                if (len > 1.0f) v2 = v2 * (1.0f / len); // diagonal keys / stick + keys normalized to length 1
             } else {
                 v2 += mouse2;
             }
@@ -415,7 +415,7 @@ bool Actions::setBinding(std::string_view action, const Action& binding) {
     const ActionKind kind = b->def.kind;
     const std::string label = b->def.label;
     b->def = binding;
-    b->def.kind = kind; // 종류·이름은 게임이 정한다
+    b->def.kind = kind; // kind/name are decided by the game
     b->def.label = label;
     std::string warnings;
     parse(*b, &warnings);
@@ -443,7 +443,7 @@ bool Actions::saveUser() const {
         text.ids.push_back(b.id);
         text.rows.push_back(std::move(fields));
     }
-    if (text.ids.empty()) { // 모두 기본값: 파일을 지운다
+    if (text.ids.empty()) { // all defaults: delete the file
         if (fileExists(m->userFile)) removeFile(m->userFile);
         m->userTime = 0;
         return true;
