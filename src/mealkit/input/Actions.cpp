@@ -1,5 +1,6 @@
 #include "mealkit/input/Actions.h"
 
+#include "mealkit/asset/AnimStates.h"
 #include "mealkit/core/Log.h"
 #include "mealkit/data/Tables.h"
 #include "mealkit/platform/Input.h"
@@ -455,7 +456,8 @@ bool Actions::saveUser() const {
 }
 
 const reflect::TableList& engineTables() {
-    static const reflect::TableList list{{&reflect::typeOf<Action>(), kBindingsTable, reflect::kTableView}};
+    static const reflect::TableList list{{&reflect::typeOf<Action>(), kBindingsTable, reflect::kTableView},
+                                         {&reflect::typeOf<asset::AnimState>(), asset::kAnimationTable, reflect::kTableView}};
     return list;
 }
 
