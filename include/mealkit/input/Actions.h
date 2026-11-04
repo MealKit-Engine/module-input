@@ -36,7 +36,7 @@ MEALKIT_ENUM(ActionKind, u8, Button, Axis, Axis2, Delta, Delta2);
 // Field descriptions are editor text, so written in English with Korean in engine/res/strings/ko.txt
 MEALKIT_STRUCT(Action) {
     MEALKIT_FIELD(ActionKind, kind, ActionKind::Button, "Kind (Button, Axis, Axis2, Delta, Delta2)");
-    MEALKIT_FIELD(std::string, label, {}, "Name shown to players");
+    MEALKIT_FIELD(std::string, label, {}, "Name shown to players|required");
     MEALKIT_FIELD(std::string, keys, {}, "Keys (Axis: negative positive, Axis2: up down left right)");
     MEALKIT_FIELD(std::string, mouse, {}, "Mouse (Left, Right, Middle, WheelUp, WheelDown, Wheel, Move, MoveX, MoveY)");
     MEALKIT_FIELD(std::string, pad, {}, "Gamepad (A, B, X, Y, LeftStick, RightStick, DPad, LeftTrigger ..., -name is negative)");
