@@ -1,0 +1,12 @@
+# MealKit module manifest, engine module (docs/ENGINE_MODULES.md "Manifest"; source modules: docs/MODULES.md). Checked by tools\check_modules.ps1.
+# requires: modules this folder may include besides the kernel (core, platform, jobs), as name minVersion.
+@format module 1
+type engine
+name input
+version 0.1.2
+engine 0.9
+kind view
+layer framework
+requires asset 0.1 data 0.1
+tags input
+summary Input actions and bindings
